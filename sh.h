@@ -42,7 +42,6 @@ extern	pid_t	procpid;	/* pid of executing process */
 extern	uid_t	ksheuid;	/* effective uid of shell */
 extern	int	exstat;		/* exit status */
 extern	int	subst_exstat;	/* exit status of last $(..)/`..` */
-extern	const char *safe_prompt; /* safe prompt if PS1 substitution fails */
 extern	char	username[];	/* username for \u prompt expansion */
 extern	int	disable_subst;	/* disable substitution during evaluation */
 
@@ -513,11 +512,6 @@ int	j_njobs(void);
 void	j_notify(void);
 pid_t	j_async(void);
 int	j_stopped_running(void);
-/* mail.c */
-void	mcheck(void);
-void	mcset(int64_t);
-void	mbset(char *);
-void	mpset(char *);
 /* main.c */
 int	include(const char *, int, char **, int);
 int	command(const char *, int);
@@ -602,4 +596,3 @@ void	change_random(void);
 int	array_ref_len(const char *);
 char *	arrayname(const char *);
 void    set_array(const char *, int, char **);
-/* vi.c: see edit.h */

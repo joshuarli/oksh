@@ -56,5 +56,3 @@ int	x_escape(const char *, size_t, int (*)(const char *, size_t));
 int	x_emacs(char *, size_t);
 void	x_init_emacs(void);
 void	x_emacs_keys(X_chars *);
-/* vi.c */
-int	x_vi(char *, size_t);

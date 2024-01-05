@@ -86,7 +86,6 @@ static const char *ungetsc(int);
 static void	gethere(void);
 static Lex_state *push_state_(State_info *, Lex_state *);
 static Lex_state *pop_state_(State_info *, Lex_state *);
-static char	*special_prompt_expand(char *);
 static int	dopprompt(const char *, int, const char **, int);
 int		promptlen(const char *cp, const char **spp);
 
@@ -1150,60 +1149,12 @@ getsc_line(Source *s)
 		s->str = NULL;
 	} else if (interactive) {
 		char *p = Xstring(s->xs, xp);
-		if (cur_prompt == PS1)
-			while (*p && ctype(*p, C_IFS) && ctype(*p, C_IFSWS))
-				p++;
+		while (*p && ctype(*p, C_IFS) && ctype(*p, C_IFSWS))
+			p++;
 		if (*p) {
 			s->line++;
 			histsave(s->line, s->str, 1);
 		}
-	}
-	if (interactive)
-		set_prompt(PS2);
-}
-
-static char *
-special_prompt_expand(char *str)
-{
-	char *p = str;
-
-	while ((p = strstr(p, "\\$")) != NULL) {
-		*(p+1) = 'p';
-	}
-	return str;
-}
-
-void
-set_prompt(int to)
-{
-	char *ps1;
-	Area *saved_atemp;
-
-	cur_prompt = to;
-
-	switch (to) {
-	case PS1: /* command */
-		ps1 = str_save(str_val(global("PS1")), ATEMP);
-		saved_atemp = ATEMP;	/* ps1 is freed by substitute() */
-		newenv(E_ERRH);
-		if (sigsetjmp(genv->jbuf, 0)) {
-			prompt = safe_prompt;
-			/* Don't print an error - assume it has already
-			 * been printed.  Reason is we may have forked
-			 * to run a command and the child may be
-			 * unwinding its stack through this code as it
-			 * exits.
-			 */
-		} else {
-			/* expand \$ before other substitutions are done */
-			char *tmp = special_prompt_expand(ps1);
-			prompt = str_save(substitute(tmp, 0), saved_atemp);
-		}
-		quitenv(NULL);
-		break;
-	case PS2: /* command continuation */
-		prompt = str_val(global("PS2"));
-		break;
 	}
 }
 
@@ -1247,6 +1198,9 @@ dopprompt(const char *sp, int ntruncate, const char **spp, int doprint)
 			case 'a':	/* '\' 'a' bell */
 				strbuf[0] = '\007';
 				strbuf[1] = '\0';
+				break;
+			case 'b':	/* git branch */
+				snprintf(strbuf, sizeof strbuf, "%s", "(git branch)");
 				break;
 			case 'd':	/* '\' 'd' Dow Mon DD */
 				time(&t);
@@ -1335,23 +1289,6 @@ dopprompt(const char *sp, int ntruncate, const char **spp, int doprint)
 			case 'u':	/* '\' 'u' username */
 				strlcpy(strbuf, username, sizeof strbuf);
 				break;
-#ifndef SMALL
-			case 'v':	/* '\' 'v' version (short) */
-				p = strchr(ksh_version, ' ');
-				if (p)
-					p = strchr(p + 1, ' ');
-				if (p) {
-					p++;
-					strlcpy(strbuf, p, sizeof strbuf);
-					p = strchr(strbuf, ' ');
-					if (p)
-						*p = '\0';
-				}
-				break;
-			case 'V':	/* '\' 'V' version (long) */
-				strlcpy(strbuf, ksh_version, sizeof strbuf);
-				break;
-#endif /* SMALL */
 			case 'w':	/* '\' 'w' cwd */
 				p = str_val(global("PWD"));
 				n = strlen(str_val(global("HOME")));

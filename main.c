@@ -34,7 +34,6 @@ pid_t	procpid;
 uid_t	ksheuid;
 int	exstat;
 int	subst_exstat;
-const char *safe_prompt;
 int	disable_subst;
 
 Area	aperm;
@@ -88,11 +87,7 @@ static const char *initcoms [] = {
 	"typeset", "-x", "SHELL", "PATH", "HOME", "PWD", "OLDPWD", NULL,
 	"typeset", "-ir", "PPID", NULL,
 	"typeset", "-i", "OPTIND=1", NULL,
-#ifndef SMALL
-	"eval", "typeset -i RANDOM MAILCHECK=\"${MAILCHECK-600}\" SECONDS=\"${SECONDS-0}\" TMOUT=\"${TMOUT-0}\"", NULL,
-#else
 	"eval", "typeset -i RANDOM SECONDS=\"${SECONDS-0}\" TMOUT=\"${TMOUT-0}\"", NULL,
-#endif /* SMALL */
 	"alias",
 	 /* Standard ksh aliases */
 	  "hash=alias -t",	/* not "alias -t --": hash -r needs to work */
@@ -325,7 +320,6 @@ main(int argc, char *argv[])
 
 	ksheuid = geteuid();
 	init_username();
-	safe_prompt = ksheuid ? "$ " : "# ";
 	{
 		struct tbl *vp = global("PS1");
 
@@ -623,10 +617,6 @@ shell(Source *volatile s, volatile int toplevel)
 		if (interactive) {
 			got_sigwinch = 1;
 			j_notify();
-#ifndef SMALL
-			mcheck();
-#endif /* SMALL */
-			set_prompt(PS1);
 		}
 
 		t = compile(s);

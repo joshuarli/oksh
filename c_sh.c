@@ -361,7 +361,6 @@ c_read(char **wp)
 						/* set prompt in case this is
 						 * called from .profile or $ENV
 						 */
-						set_prompt(PS2);
 						pprompt(prompt, 0);
 					}
 				} else if (c != EOF)

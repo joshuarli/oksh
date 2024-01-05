@@ -115,5 +115,4 @@ int	yylex(int);
 void	yyerror(const char *, ...)
 	    __attribute__((__noreturn__, __format__ (printf, 1, 2)));
 Source * pushs(int, Area *);
-void	set_prompt(int);
 void	pprompt(const char *, int);

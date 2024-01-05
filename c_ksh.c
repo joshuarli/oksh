@@ -11,6 +11,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <dirent.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+
 #include "sh.h"
 
 int
@@ -1396,6 +1403,72 @@ c_bind(char **wp)
 }
 #endif
 
+char const * sperm(mode_t mode) {
+    static char buf[16] = {0};
+    int i = 0;
+    // user permissions
+    if ((mode & S_IRUSR) == S_IRUSR) buf[i] = 'r';
+    else buf[i] = '-';
+    i++;
+    if ((mode & S_IWUSR) == S_IWUSR) buf[i] = 'w';
+    else buf[i] = '-';
+    i++;
+    if ((mode & S_IXUSR) == S_IXUSR) buf[i] = 'x';
+    else buf[i] = '-';
+    i++;
+    // group permissions
+    if ((mode & S_IRGRP) == S_IRGRP) buf[i] = 'r';
+    else buf[i] = '-';
+    i++;
+    if ((mode & S_IWGRP) == S_IWGRP) buf[i] = 'w';
+    else buf[i] = '-';
+    i++;
+    if ((mode & S_IXGRP) == S_IXGRP) buf[i] = 'x';
+    else buf[i] = '-';
+    i++;
+    // other permissions
+    if ((mode & S_IROTH) == S_IROTH) buf[i] = 'r';
+    else buf[i] = '-';
+    i++;
+    if ((mode & S_IWOTH) == S_IWOTH) buf[i] = 'w';
+    else buf[i] = '-';
+    i++;
+    if ((mode & S_IXOTH) == S_IXOTH) buf[i] = 'x';
+    else buf[i] = '-';
+    return buf;
+}
+
+int
+c_l(char **wp)
+{
+	DIR *dir;
+	struct dirent *dent;
+	struct stat s;
+
+	if ((dir = opendir(".")) == NULL) {
+    	bi_errorf("open . failed");
+        return 1;
+    }
+
+	while ((dent = readdir(dir)) != NULL) {
+		// TODO: --hidden
+		// if (dent->d_name[0] == '.') {
+		// TODO: sort by name
+		// TODO: symlink info
+    	// TODO: color executables and directories
+    	if (stat(dent->d_name, &s) == -1) {
+    		// stat failed
+    		continue;
+    	}
+    	// TODO: humanize st_size
+    	shprintf("%10.10s %d %s %lld\n", sperm(s.st_mode), s.st_uid, dent->d_name, s.st_size);
+    	// TODO get user UID once and substitute it, otherwise just print uid
+	}
+
+	closedir(dir);
+	return 0;
+}
+
 /* A leading = means assignments before command are kept;
  * a leading * means a POSIX special builtin;
  * a leading + means a POSIX regular builtin
@@ -1421,6 +1494,7 @@ const struct builtin kshbuiltins [] = {
 	{"whence", c_whence},
 	{"+bg", c_fgbg},
 	{"+fg", c_fgbg},
+	{"l", c_l},
 #ifdef EMACS
 	{"bind", c_bind},
 #endif

@@ -21,8 +21,7 @@ struct table homedirs;	/* homedir() cache */
 char *search_path;	/* copy of either PATH or def_path */
 const char *def_path;	/* path to use if PATH not set */
 char *tmpdir;		/* TMPDIR value */
-const char *prompt;
-int cur_prompt;		/* PS1 or PS2 */
+const char *prompt = "\\u@\\h \\w \\b $ ";;
 int current_lineno;	/* LINENO value */
 
 static void	texpand(struct table *, int);
