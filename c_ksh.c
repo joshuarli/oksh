@@ -1438,12 +1438,38 @@ char const * sperm(mode_t mode) {
     return buf;
 }
 
+// modified from toybox
+void human_size(char *buf, unsigned long long num)
+{
+  unsigned long long snap = 0;
+  int len, unit, divisor = 1024;
+
+  // Divide rounding up until we have 3 or fewer digits. Since the part we
+  // print is decimal, the test is 999 even when we divide by 1024.
+  // We can't run out of units because 2<<64 is 18 exabytes.
+  // test 5675 is 5.5k not 5.6k.
+  for (unit = 0; num > 999; unit++) num = ((snap = num)+(divisor/2))/divisor;
+  len = sprintf(buf, "%llu", num);
+  if (unit && len == 1) {
+    // Redo rounding for 1.2M case, this works with and without HR_1000.
+    num = snap/divisor;
+    snap -= num*divisor;
+    snap = ((snap*100)+50)/divisor;
+    snap /= 10;
+    len = sprintf(buf, "%llu.%llu", num, snap);
+  }
+  unit = "BKMGTPE"[unit];
+  buf[len++] = unit;
+  buf[len] = '\0';
+}
+
 int
 c_l(char **wp)
 {
 	DIR *dir;
 	struct dirent *dent;
 	struct stat s;
+	char human_size_buf[16];
 
 	if ((dir = opendir(".")) == NULL) {
     	bi_errorf("open . failed");
@@ -1460,8 +1486,8 @@ c_l(char **wp)
     		// stat failed
     		continue;
     	}
-    	// TODO: humanize st_size
-    	shprintf("%10.10s %d %s %lld\n", sperm(s.st_mode), s.st_uid, dent->d_name, s.st_size);
+    	human_size(human_size_buf, s.st_size);
+    	shprintf("%10.10s %5d %6s %.64s\n", sperm(s.st_mode), s.st_uid, human_size_buf, dent->d_name);
     	// TODO get user UID once and substitute it, otherwise just print uid
 	}
 
